@@ -88,5 +88,67 @@ export async function createUser(req: Request, res: Response) {
     });
   } catch (error) {
     console.log(error);
+    return res.status(500).json({
+      error: "Something went wrong",
+      data: null,
+    });
+  }
+}
+
+export async function getUsers(req: Request, res: Response) {
+  try {
+    const users = await db.user.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    const usersWithoutPassword = users.map((user) => {
+      const { password, ...users } = user;
+      return users;
+    });
+
+    res.status(200).json({
+      data: usersWithoutPassword,
+      error: null,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      error: "Something not wrong",
+      data: null,
+    });
+  }
+}
+
+export async function getUserById(req: Request, res: Response) {
+  const { id } = req.params;
+  try {
+    const user = await db.user.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    // Check if the user exists before destructuring
+    if (!user) {
+      return res.status(404).json({
+        error: "User not found",
+        data: null,
+      });
+    }
+
+    const { password, ...uniqueUser } = user;
+
+    res.status(200).json({
+      data: uniqueUser,
+      error: null,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      error: "Something nt wrong",
+      data: null,
+    });
   }
 }
