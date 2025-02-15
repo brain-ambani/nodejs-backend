@@ -1,71 +1,47 @@
 import { Request, Response, NextFunction } from "express";
+import { db } from "@/db/db";
 
-export async function getCustomers(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+export async function createCustomer(req: Request, res: Response) {
+  const { name, email, phone } = req.body;
   try {
-    const customers = [
-      {
-        id: 1,
-        name: "John Doe",
-        email: "john.doe@example.com",
-        phone: "+1234567890",
+    const newCustomer = await db.customer.create({
+      data: {
+        name,
+        email,
+        phone,
       },
-      {
-        id: 2,
-        name: "Joel Smith",
-        email: "joel.smith@example.com",
-        phone: "+0987654321",
-      },
-      {
-        id: 3,
-        name: "Mike Bunny",
-        email: "mike@example.com",
-        phone: "+0987654321",
-      },
-    ];
-
-    return res.status(200).json(customers);
+    });
+    return res.status(201).json(newCustomer);
   } catch (error) {
-    next(error);
+    console.log(error);
   }
 }
 
-export async function getCustomer(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+export async function getCustomers(req: Request, res: Response) {
   try {
-    const { id } = req.params;
-    console.log(id);
-    const customers = [
-      {
-        id: 1,
-        name: "John Doe",
-        email: "john.doe@example.com",
-        phone: "+1234567890",
+    const customers = await db.customer.findMany({
+      orderBy: {
+        createdAt: "desc",
       },
-      {
-        id: 2,
-        name: "Joel Smith",
-        email: "joel.smith@example.com",
-        phone: "+0987654321",
-      },
-      {
-        id: 3,
-        name: "Mike Bunny",
-        email: "mike@example.com",
-        phone: "+0987654321",
-      },
-    ];
+    });
 
-    const customer = customers.find((customer) => customer.id === parseInt(id));
+    return res.status(200).json(customers);
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+export async function getCustomer(req: Request, res: Response) {
+  const { id } = req.params;
+  try {
+    const customer = await db.customer.findUnique({
+      where: {
+        id: parseInt(id),
+      },
+    });
 
     return res.status(200).json(customer);
   } catch (error) {
-    next(error);
+    console.log(error);
   }
 }
