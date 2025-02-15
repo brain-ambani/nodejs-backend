@@ -1,4 +1,5 @@
 import express from "express";
+import customerRouter from "./routes/customers.route";
 
 require("dotenv").config();
 const cors = require("cors");
@@ -13,3 +14,5 @@ app.use(express.json());
 app.listen(PORT, () => {
   console.log(`Server is running on PORT ${PORT}`);
 });
+
+app.use("/api/v1", customerRouter);
