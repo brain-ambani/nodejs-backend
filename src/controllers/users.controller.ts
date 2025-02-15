@@ -4,7 +4,7 @@ import { db } from "@/db/db";
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 
-export async function createUser(req: Request, res: Response) {
+export async function createUser(req: Request, res: Response): Promise<void> {
   const {
     email,
     username,
@@ -21,7 +21,8 @@ export async function createUser(req: Request, res: Response) {
   try {
     // check for fields validation
     if (!email || !username || !password || !firstName || !lastNAme || !phone) {
-      return res.status(400).json({ message: "All fields are required" });
+      res.status(400).json({ message: "All fields are required" });
+      return;
     }
     // check if user already exists by email, phone or username
     const existingUserByEmail = await db.user.findUnique({
@@ -88,14 +89,15 @@ export async function createUser(req: Request, res: Response) {
     });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({
+    res.status(500).json({
       error: "Something went wrong",
       data: null,
     });
+    return;
   }
 }
 
-export async function getUsers(req: Request, res: Response) {
+export async function getUsers(req: Request, res: Response): Promise<void> {
   try {
     const users = await db.user.findMany({
       orderBy: {
@@ -114,14 +116,15 @@ export async function getUsers(req: Request, res: Response) {
     });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({
+    res.status(500).json({
       error: "Something not wrong",
       data: null,
     });
+    return;
   }
 }
 
-export async function getUserById(req: Request, res: Response) {
+export async function getUserById(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
   try {
     const user = await db.user.findUnique({
@@ -132,10 +135,11 @@ export async function getUserById(req: Request, res: Response) {
 
     // Check if the user exists before destructuring
     if (!user) {
-      return res.status(404).json({
+      res.status(404).json({
         error: "User not found",
         data: null,
       });
+      return;
     }
 
     const { password, ...uniqueUser } = user;
@@ -146,9 +150,10 @@ export async function getUserById(req: Request, res: Response) {
     });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({
+    res.status(500).json({
       error: "Something nt wrong",
       data: null,
     });
+    return;
   }
 }
