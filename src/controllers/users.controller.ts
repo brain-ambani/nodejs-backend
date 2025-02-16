@@ -174,7 +174,7 @@ export async function updateUserById(
     dob,
     gender,
     image,
-    role,
+    password,
   } = req.body;
   try {
     const user = await db.user.findUnique({
@@ -192,6 +192,56 @@ export async function updateUserById(
       return;
     }
 
+    // check if the email, phone, username are unique
+
+    if (email && email !== user.email) {
+      const existingUserByEmail = await db.user.findUnique({
+        where: {
+          email,
+        },
+      });
+      if (existingUserByEmail) {
+        res.status(409).json({
+          error: `Email ${email} already exists`,
+        });
+        return;
+      }
+    }
+
+    if (username && username !== user.username) {
+      const existingUserByUsername = await db.user.findUnique({
+        where: {
+          username,
+        },
+      });
+      if (existingUserByUsername) {
+        res.status(409).json({
+          error: `Username ${username} already taken`,
+        });
+        return;
+      }
+    }
+
+    if (phone && phone !== user.phone) {
+      const existingUserByPhone = await db.user.findUnique({
+        where: {
+          phone,
+        },
+      });
+      if (existingUserByPhone) {
+        res.status(409).json({
+          error: `Phone number ${phone} already exists`,
+        });
+        return;
+      }
+    }
+
+    // hash password
+    let hashedPassword = user.password;
+    if (password) {
+      hashedPassword = await bcrypt.hash(password, 10);
+    }
+
     const updatedUser = await db.user.update({
       where: {
         id,
@@ -205,11 +255,12 @@ export async function updateUserById(
         dob,
         gender,
         image,
+        password: hashedPassword,
       },
     });
 
     // Modify the return user not to include the password
-    const { password, ...others } = updatedUser;
+    const { password: userPassword, ...others } = updatedUser;
 
     res.status(200).json({
       data: others,
