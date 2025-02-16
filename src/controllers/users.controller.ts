@@ -10,7 +10,7 @@ export async function createUser(req: Request, res: Response): Promise<void> {
     username,
     password,
     firstName,
-    lastNAme,
+    lastName,
     phone,
     dob,
     gender,
@@ -20,7 +20,7 @@ export async function createUser(req: Request, res: Response): Promise<void> {
 
   try {
     // check for fields validation
-    if (!email || !username || !password || !firstName || !lastNAme || !phone) {
+    if (!email || !username || !password || !firstName || !lastName || !phone) {
       res.status(400).json({ message: "All fields are required" });
       return;
     }
@@ -70,9 +70,10 @@ export async function createUser(req: Request, res: Response): Promise<void> {
         username,
         password: hashedPassword,
         firstName,
-        lastNAme,
+        lastName,
         phone,
         dob,
+        role,
         gender,
         image: image
           ? image
@@ -151,7 +152,200 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
   } catch (error) {
     console.log(error);
     res.status(500).json({
-      error: "Something nt wrong",
+      error: "Something went wrong",
+      data: null,
+    });
+    return;
+  }
+}
+
+export async function updateUserById(
+  req: Request,
+  res: Response
+): Promise<void> {
+  const { id } = req.params;
+
+  const {
+    email,
+    username,
+    firstName,
+    lastName,
+    phone,
+    dob,
+    gender,
+    image,
+    role,
+  } = req.body;
+  try {
+    const user = await db.user.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    // Check if the user exists before destructuring
+    if (!user) {
+      res.status(404).json({
+        error: "User not found",
+        data: null,
+      });
+      return;
+    }
+
+    const updatedUser = await db.user.update({
+      where: {
+        id,
+      },
+      data: {
+        email,
+        username,
+        firstName,
+        lastName,
+        phone,
+        dob,
+        gender,
+        image,
+      },
+    });
+
+    // Modify the return user not to include the password
+    const { password, ...others } = updatedUser;
+
+    res.status(200).json({
+      data: others,
+      error: null,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      error: "Something went wrong",
+      data: null,
+    });
+    return;
+  }
+}
+
+export async function updateUserPasswordById(
+  req: Request,
+  res: Response
+): Promise<void> {
+  const { id } = req.params;
+
+  const { password } = req.body;
+  try {
+    const user = await db.user.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    // Check if the user exists before destructuring
+    if (!user) {
+      res.status(404).json({
+        error: "User not found",
+        data: null,
+      });
+      return;
+    }
+
+    // hash password
+    const hashedPassword: string = await bcrypt.hash(password, 10);
+
+    const updatedPassword = await db.user.update({
+      where: {
+        id,
+      },
+      data: {
+        password: hashedPassword,
+      },
+    });
+
+    // Modify the return user not to include the password
+    const { password: savedPassword, ...others } = updatedPassword;
+
+    res.status(200).json({
+      message: "Password updated successfully",
+      error: null,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      error: "Something went wrong",
+      data: null,
+    });
+    return;
+  }
+}
+
+export async function deleteUserById(
+  req: Request,
+  res: Response
+): Promise<void> {
+  const { id } = req.params;
+
+  try {
+    const user = await db.user.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    // Check if the user exists before destructuring
+    if (!user) {
+      res.status(404).json({
+        error: "User not found",
+        data: null,
+      });
+      return;
+    }
+
+    await db.user.delete({
+      where: {
+        id,
+      },
+    });
+
+    res.status(200).json({
+      sucesss: "User deleted successfully",
+      error: null,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      error: "Something went wrong",
+      data: null,
+    });
+    return;
+  }
+}
+
+export async function getAttendants(
+  req: Request,
+  res: Response
+): Promise<void> {
+  try {
+    const users = await db.user.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+      where: {
+        role: "ATTENDANT",
+      },
+    });
+
+    const usersWithoutPassword = users.map((user) => {
+      const { password, ...users } = user;
+      return users;
+    });
+
+    res.status(200).json({
+      data: usersWithoutPassword,
+      error: null,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      error: "Something not wrong",
       data: null,
     });
     return;
